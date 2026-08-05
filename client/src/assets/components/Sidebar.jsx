@@ -7,7 +7,7 @@ const Sidebar = () => {
     const userName = 'John Doe'
     const [mobileOpen, setMobileOpen] = useState(false)
 
-    const role = 'EMPLOYEE';
+    const role = '' || 'EMPLOYEE';
     const navItems = [
         {name: "Dashboard", href: "/dashboard", icon: LayoutGridIcon},
         role === "ADMIN" ?
@@ -36,7 +36,7 @@ const Sidebar = () => {
         </div>
         </div>
         {/*Close button on mobile*/ }
-        <button onClick ={() => setMobileOpen(false)}className='lg:hidden text-slate text-slate-400 hover:text-white p-1'>
+        <button onClick={() => setMobileOpen(false)} className='lg:hidden text-slate text-slate-400 hover:text-white p-1'>
             <XIcon size={20}/>
         </button>
         
