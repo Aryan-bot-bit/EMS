@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Loader2 as Loader2Icon } from 'lucide-react'
 
 // Department List
 const DEPARTMENTS = [

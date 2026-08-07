@@ -1,7 +1,18 @@
 import React from 'react'
 import { format } from 'date-fns'
 
-const AttendanceHistory = ({ history = [], getDayTypeDisplay = () => {} }) => {
+const AttendanceHistory = ({ 
+    history = [], 
+    getDayTypeDisplay = () => ({ label: "-", className: "" }),
+    getWorkingHoursDisplay = (record) => {
+        if (record.workingHours !== undefined && record.workingHours !== null && record.workingHours !== "") {
+            return typeof record.workingHours === 'number' 
+                ? `${Math.floor(record.workingHours)}h ${Math.round((record.workingHours % 1) * 60)}m` 
+                : `${record.workingHours}h 0m`;
+        }
+        return "-";
+    }
+}) => {
  return (
 <div className='card overflow-hidden'>
     <div className="px-6 py-4 border-b border-slate-100">
@@ -32,12 +43,21 @@ const AttendanceHistory = ({ history = [], getDayTypeDisplay = () => {} }) => {
                                 <td className='px-6 py-4 font-medium text-slate-900'>
                                     {format(new Date(record.date), "MMM dd, yyyy")}
                                 </td>
-                                                    <td className='px-6 py-4 text-slate-600'>
-                                                        {/* {record.checkIn ?  format(new Date(record.date), "hh:mm a") : "-"} */}
-                                                        {record.checkIn ? format(new Date(record.checkIn), "hh:mm a") : "-"}
-                                   
+                                <td className='px-6 py-4 text-slate-600'>
+                                    {record.checkIn ? format(new Date(record.checkIn), "hh:mm a") : "-"}
                                 </td>
-              
+                                <td className='px-6 py-4 text-slate-600'>
+                                    {record.checkOut ? format(new Date(record.checkOut), "hh:mm a") : "-"}
+                                </td>
+                                <td className='px-6 py-4 text-slate-600 font-medium'>
+                                    {getWorkingHoursDisplay(record)}
+                                </td>
+                                <td className='px-6 py-4'>
+                                    {dayType.label !== "-" ? <span className={`badge ${dayType.className}`}>{dayType.label}</span> : "-"}
+                                </td>
+                                <td className='px-6 py-4 text-slate-600'>
+                                    {record.status || "-"}
+                                </td>
                             </tr>
                         )
                     })
@@ -47,7 +67,7 @@ const AttendanceHistory = ({ history = [], getDayTypeDisplay = () => {} }) => {
     </div>
 </div>
 
-  )
+ )
 }
 
 export default AttendanceHistory
