@@ -9,20 +9,22 @@ import profileRouter from "./routes/profileRoutes.js";
 import attendanceRouter from "./routes/attendanceRouters.js";
 
 
-const app = express()
-const PORT = process.envPORT || 4000;
-//middleware
+const app = express();
+const PORT = process.env.PORT || 4000;
 
-app.use(cors())
-app.use(express.json())
-app.use(multer().none())
-//routes
-app.get("/", (req, res) => res.send("server is running"))
-app.use("api/auth", authRouter)
-app.use("api/employees", employeesRouter)
-app.use("api/profile", profileRouter)
-app.use("api/attendance", attendanceRouter)
+// middleware
+app.use(cors());
+app.use(express.json());
+app.use(multer().none());
 
-await connectDB()
-//server
+// routes
+app.get("/", (req, res) => res.send("server is running"));
+app.use("/api/auth", authRouter);
+app.use("/api/employees", employeesRouter);
+app.use("/api/profile", profileRouter);
+app.use("/api/attendance", attendanceRouter);
+
+await connectDB();
+
+// server
 app.listen(PORT, () => console.log(`server running on port ${PORT}`));
