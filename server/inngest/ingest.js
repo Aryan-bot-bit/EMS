@@ -36,15 +36,6 @@ const autoCheckOut = inngest.createFunction(
       if (!employee) return { ok: false, reason: "Employee not found" };
 
       await step.sleep("wait-for-1-hour", "1h");
-
-      const updatedAttendance = await Attendance.findById(attendanceId);
-      if (!updatedAttendance?.checkOut) {
-        updatedAttendance.checkOut = new Date(updatedAttendance.checkIn).getTime() + 4 * 60 * 60 * 1000;
-        updatedAttendance.workingHours = 4;
-        updatedAttendance.dayType = "Half Day";
-        updatedAttendance.status = "LATE";
-        await updatedAttendance.save();
-      }
     }
 
     return { ok: true };
@@ -162,7 +153,7 @@ const attendanceReminderCron = inngest.createFunction(
         }
       });
     }
-
+    await Promise.all(emailPromises)
     return {
       totalActive: activeEmployees.length,
       onLeave: onLeaveIds.length,

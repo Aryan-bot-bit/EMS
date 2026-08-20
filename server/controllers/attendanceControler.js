@@ -35,12 +35,14 @@ export const clockInOut = async (req, res) => {
                 status: isLate ? "LATE" : "PRESENT",
             });
 
-           await inngest.send({
+           inngest.send({
     name: "employee/check-out",
     data: {
         employeeId: employee._id,
         attendanceId: attendance._id,
     }
+}).catch((error) => {
+    console.error("Attendance reminder error:", error);
 })
 
             return res.json({ success: true, type: "CHECK_IN", data: attendance });
@@ -63,7 +65,15 @@ export const clockInOut = async (req, res) => {
             await existing.save();
             return res.json({ success: true, type: "CHECK_OUT", data: existing });
         } else {
-            return res.json({ success: true, type: "CHECK_OUT", data: existing });
+            const isLate = now.getHours() >= 9 && now.getMinutes() > 0;
+            existing.checkIn = now;
+            existing.checkOut = null;
+            existing.workingHours = null;
+            existing.dayType = null;
+            existing.status = isLate ? "LATE" : "PRESENT";
+
+            await existing.save();
+            return res.json({ success: true, type: "CHECK_IN", data: existing });
         }
     } catch (error) {
         console.error("Attendance Error:", error);
@@ -83,7 +93,7 @@ export const getAttendance = async (req, res) => {
         const history = await Attendance.find({ employeeId: employee._id }).sort({ date: -1 }).limit(limit);
 
         return res.json({
-            date: history,
+            data: history,
             employee: { isDeleted: employee.isDeleted },
         });
     } catch (error) {

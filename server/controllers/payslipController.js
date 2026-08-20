@@ -1,4 +1,5 @@
 import Payslip from "../models/Payslip.js";
+import Employee from "../models/Emplooyee.js";
 
 
 // Create payslip
@@ -54,7 +55,7 @@ export const getPayslips = async (req, res) => {
                 if (!employee) return res.status(404).json({ error: "Not found" });
                 const payslips = await Payslip.find({employeeId: employee._id}).
                 sort({ createdAt: -1 });
-                return res.json({date: payslips})
+                return res.json({ data: payslips })
             }
         } catch (error) {
             return res.status(500).json({ error: "Failed" });
