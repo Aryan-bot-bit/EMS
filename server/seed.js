@@ -1,8 +1,44 @@
 import "dotenv/config";
 import connectDB from "./config/db.js";
 import User from "./models/User.js";
-const TemporaryPassword = "admin123";
 import bcrypt from "bcrypt";
+
+const TemporaryPassword = "admin123";
+
+export async function ensureDefaultAdmin() {
+  try {
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+
+    if (!ADMIN_EMAIL) {
+      console.warn("Missing ADMIN_EMAIL env variable; skipping default admin creation");
+      return false;
+    }
+
+    const existingAdmin = await User.findOne({
+      email: ADMIN_EMAIL.toLowerCase(),
+    });
+
+    if (existingAdmin) {
+      return true;
+    }
+
+    const hashedPassword = await bcrypt.hash(TemporaryPassword, 10);
+
+    const admin = await User.create({
+      email: ADMIN_EMAIL.toLowerCase(),
+      password: hashedPassword,
+      role: "ADMIN",
+    });
+
+    console.log("Default admin user created");
+    console.log("email:", admin.email);
+    console.log("password:", TemporaryPassword);
+    return true;
+  } catch (error) {
+    console.error("Default admin creation failed:", error);
+    return false;
+  }
+}
 
 async function registerAdmin() {
   try {
@@ -14,33 +50,13 @@ async function registerAdmin() {
     }
 
     await connectDB();
-
-    const existingAdmin = await User.findOne({
-      email: process.env.ADMIN_EMAIL,
-    });
-
-    if (existingAdmin) {
-      console.log("User already exists as role", existingAdmin.role);
-      process.exit(0);
-    }
-
-    const hashedPassword = await bcrypt.hash(TemporaryPassword, 10);
-
-    const admin = await User.create({
-      email: process.env.ADMIN_EMAIL,
-      password: hashedPassword,
-      role: "ADMIN",
-    });
-
-    console.log("Admin user created");
-    console.log("\nemail:", admin.email);
-    console.log("password:", TemporaryPassword);
-    console.log("\nchange the password after login.");
-
+    await ensureDefaultAdmin();
     process.exit(0);
   } catch (error) {
     console.error("seed failed:", error);
   }
 }
 
-registerAdmin();
+if (process.argv[1] && process.argv[1].includes("seed.js")) {
+  registerAdmin();
+}

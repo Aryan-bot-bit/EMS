@@ -7,21 +7,23 @@ import User from "../models/User.js";
 export const login = async (req, res) => {
     try {
         const { email, password, role_type } = req.body;
+        const normalizedEmail = String(email || "").trim().toLowerCase();
+        const normalizedRole = String(role_type || "").trim().toLowerCase();
 
-        if (!email || !password) {
-            return res.status(400).json({ error: "Email and password are required" });
+        if (!normalizedEmail || !password || !normalizedRole) {
+            return res.status(400).json({ error: "Email, password, and role are required" });
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        if (role_type === "admin" && user.role !== "ADMIN") {
+        if (normalizedRole === "admin" && user.role !== "ADMIN") {
             return res.status(401).json({ error: "Not authorized as admin" });
         }
 
-        if (role_type === "employee" && user.role !== "EMPLOYEE") {
+        if (normalizedRole === "employee" && user.role !== "EMPLOYEE") {
             return res.status(401).json({ error: "Not authorized as employee" });
         }
 
@@ -36,7 +38,8 @@ export const login = async (req, res) => {
             email: user.email,
         };
 
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const jwtSecret = process.env.JWT_SECRET || "super-jwt-key";
+        const token = jwt.sign(payload, jwtSecret, { expiresIn: "7d" });
 
         return res.json({ user: payload, token });
     } catch (error) {

@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import Employee from "../models/Emplooyee.js";
 import User from "../models/User.js";
+import { normalizeDepartment } from "../constants/department.js";
 
 //get emp
 
@@ -40,27 +41,29 @@ try {
     return res.status(400).json({ error: "Missing required fields" });
     }
 
+    const normalizedDepartment = normalizeDepartment(department);
+
     const hashed = await bcrypt.hash(password, 10)
     const user = await User.create({
-    email,
-    password: hashed,
-    role: role || "EMPLOYEE"
-})
+        email: String(email).trim().toLowerCase(),
+        password: hashed,
+        role: role || "EMPLOYEE"
+    })
 
-const employee = await Employee.create({
-    userId: user._id,
-    firstName,
-    lastName,
-    email,
-    phone,
-    position,
-    department: department || "Engineering",
-    basicSalary: Number(basicSalary) || 0,
-    allowances: Number(allowances) || 0,
-    deductions: Number(deductions) || 0,
-    joinDate: new Date(joinDate),
-    bio: bio || "",
-})
+    const employee = await Employee.create({
+        userId: user._id,
+        firstName: String(firstName).trim(),
+        lastName: String(lastName).trim(),
+        email: String(email).trim().toLowerCase(),
+        phone: String(phone).trim(),
+        position: String(position).trim(),
+        department: normalizedDepartment,
+        basicSalary: Number(basicSalary) || 0,
+        allowances: Number(allowances) || 0,
+        deductions: Number(deductions) || 0,
+        joinDate: new Date(joinDate),
+        bio: bio || "",
+    })
     return res.status(201).json({success: true, employee})
 
 } catch(error) {
@@ -86,27 +89,30 @@ try {
     const employee = await Employee.findById(id);
     if(!employee) return res.status(404).json({error: "Employee not found"})
 
- await Employee.findByIdAndUpdate(id, {
-    firstName,
-    lastName,
-    email,
-    phone,
-    position,
-    department: department || "Engineering",
-    basicSalary: Number(basicSalary) || 0,
-    allowances: Number(allowances) || 0,
-    deductions: Number(deductions) || 0,
-    employmentStatus: employmentStatus || "Active",
-    bio: bio || "",
-})
+    const normalizedDepartment = normalizeDepartment(department);
 
-    // update user record
-    const userUpdate = {email}
-    if(role) userUpdate.role = role;
-    if(password) userUpdate.password = await bcrypt.hash(password, 10)
+    const updateData = {
+        firstName: String(firstName).trim(),
+        lastName: String(lastName).trim(),
+        email: String(email).trim().toLowerCase(),
+        phone: String(phone).trim(),
+        position: String(position).trim(),
+        department: normalizedDepartment,
+        basicSalary: Number(basicSalary) || 0,
+        allowances: Number(allowances) || 0,
+        deductions: Number(deductions) || 0,
+        employmentStatus: employmentStatus || "ACTIVE",
+        bio: bio || "",
+    };
+
+    await Employee.findByIdAndUpdate(id, updateData, { new: true });
+
+    const userUpdate = { email: String(email).trim().toLowerCase() };
+    if (role) userUpdate.role = role;
+    if (password) userUpdate.password = await bcrypt.hash(password, 10);
     await User.findByIdAndUpdate(employee.userId, userUpdate)
 
-    return res.json({ success: true})
+    return res.json({ success: true, employee: updateData })
     
 } catch(error) {
 if(error.code === 11000){
@@ -121,9 +127,20 @@ return res.status(500).json({ error: "Failed to update employee" });
 //delete /api/emp/:id
 
 export const deleteEmployee = async (req, res) => {
-    try{
+    try {
+        const { id } = req.params;
 
-    } catch ( error ) {
-        return res.status(5000).json({ error : "Failed to delete employee "});
+        const employee = await Employee.findById(id);
+        if (!employee) {
+            return res.status(404).json({ error: "Employee not found" });
+        }
+
+        await User.findByIdAndDelete(employee.userId);
+        await Employee.findByIdAndDelete(id);
+
+        return res.json({ success: true, message: "Employee deleted successfully" });
+    } catch (error) {
+        console.error("Delete employee error:", error);
+        return res.status(500).json({ error: "Failed to delete employee" });
     }
 }
