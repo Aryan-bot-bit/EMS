@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react'
+import api from '../../../api/axios'
+import toast from 'react-hot-toast'
 
 const ApplyLeaveModal = ({open, onClose, onSuccess}) => {
   const [loading, setLoading] = useState(false)
@@ -22,11 +24,39 @@ const ApplyLeaveModal = ({open, onClose, onSuccess}) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!form.fromDate || !form.toDate || !form.reason) {
+      toast.error('Please fill all required fields')
+      return
+    }
+
     setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    setLoading(false)
-    onSuccess?.()
-    onClose()
+    try {
+      const payload = {
+        type: form.type,
+        startDate: form.fromDate,
+        endDate: form.toDate,
+        reason: form.reason,
+      }
+
+      await api.post('/leave', payload)
+      toast.success('Leave application submitted successfully')
+      
+      // Reset form
+      setForm({
+        type: 'SICK',
+        fromDate: '',
+        toDate: '',
+        reason: '',
+      })
+      
+      onSuccess?.()
+      onClose()
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to submit leave request')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!open) return null

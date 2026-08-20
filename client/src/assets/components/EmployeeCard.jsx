@@ -1,14 +1,19 @@
-import {PencilIcon, Trash2Icon} from 'lucide-react'
+import { PencilIcon, Trash2Icon } from 'lucide-react';
+import React from 'react';
+import api from '../../api/axios';
+import toast from 'react-hot-toast';
 
-import React from 'react'
+const EmployeeCard = ({ employee, onDelete, onEdit }) => {
+    const handleDelete = async () => {
+        if (!confirm('Are you sure you want to delete this employee?')) return;
 
-const EmployeeCard = ({employee, onDelete, onEdit}) => { // eslint-disable-line no-unused-vars
-
-    const handleDelete = async ()=> {
-        if(!confirm("Are you sure want to delete this employee?"))
-            return;
-        onDelete(employee);
-    }
+        try {
+            await api.delete(`/employees/${employee.id}`);
+            onDelete?.(employee);
+        } catch (err) {
+            toast.error(err.response?.data?.error || err.message || 'Delete failed');
+        }
+    };
   return (
     <div className='group relative card card-hover overflow-hidden'>
         <div className='relative aspect-4/3 w-full overflow-hidden bg-linear-to-br from-slate-100 to-slate-50'>

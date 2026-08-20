@@ -1,25 +1,48 @@
-import React, { useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { MenuIcon, UserIcon, XIcon, LayoutGridIcon, CalendarIcon, FileTextIcon, DollarSignIcon, SettingsIcon, ChevronRightIcon, LogOutIcon } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import api from '../../api/axios'
 
 const Sidebar = () => {
     const { pathname } = useLocation()
-    const userName = 'John Doe'
+    const navigate = useNavigate()
+    const [userName, setUserName] = useState('')
     const [mobileOpen, setMobileOpen] = useState(false)
 
-    const role = '' || 'EMPLOYEE';
+    const { user, logout } = useAuth()
+
+    useEffect(() => {
+        if (!user) return
+
+        api.get('/profile')
+            .then(({ data }) => {
+                if (data.firstName) {
+                    setUserName(`${data.firstName} ${data.lastName || ''}`.trim())
+                }
+            })
+            .catch(() => {
+                setUserName(user.email || 'User')
+            })
+    }, [user])
+
+    const role = user?.role;
     const navItems = [
         {name: "Dashboard", href: "/dashboard", icon: LayoutGridIcon},
         role === "ADMIN" ?
-        {name: "Employees", href: "/employees", icon: UserIcon }:
-        {name: "Attendance", href: "/Attendance", icon: CalendarIcon },
+        {name: "Employees", href: "/employees", icon: UserIcon } :
+        {name: "Attendance", href: "/attendance", icon: CalendarIcon },
         {name: "Leave", href: "/leave", icon: FileTextIcon },
         {name: "Payslips", href: "/payslips", icon: DollarSignIcon },
         {name: "Settings", href: "/settings", icon: SettingsIcon }
     ]
 
-    const handleLogout = ()=> {
-        window.location.href = "/login"
+    const handleLogout = async () => {
+        try {
+            await logout()
+        } finally {
+            navigate('/login')
+        }
     }
 
     const sidebarContent = (

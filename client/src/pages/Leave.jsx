@@ -1,31 +1,40 @@
 import { useEffect, useState } from "react"
+import toast from "react-hot-toast"
 import { dummyLeaveData } from "../assets/assets"
 import Loading from "../assets/components/Loading"
 import { Plus as PlusIcon, Thermometer as ThermometerIcon, Umbrella as UmbrellaIcon, Calendar as CalendarIcon } from "lucide-react"
 import LeaveHistory from "../assets/components/leave/LeaveHistory"
 import ApplyLeave from "../assets/components/leave/ApplyLeave"
+import api from "../api/axios"
+import { useAuth } from "../context/AuthContext"
 
 const Leave = () => {
+  const { user } = useAuth()
   const [leaves, setLeaves] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const isAdmin = false;
+  const isAdmin = user?.role === "ADMIN"
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLeaves(dummyLeaveData)
-      setLoading(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  const fetchLeaves = () => {
+  const fetchLeaves = async () => {
     setLoading(true)
-    setLeaves(dummyLeaveData)
+
+    try {
+      const res = await api.get("/leave")
+      const nextLeaves = res.data?.data || res.data?.leaves || []
+      setLeaves(nextLeaves)
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error.message || "Failed to load leaves")
+      setLeaves(dummyLeaveData)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if(loading) return <Loading/>
+  useEffect(() => {
+    fetchLeaves()
+  }, [])
+
+  if (loading) return <Loading />
 
   const sickCount = leaves.filter((l)=>l.type === "SICK").length;
   const casualCount = leaves.filter((l)=>l.type === "CASUAL").length;
