@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { dummyProfileData } from "../assets/assets"
 import Loading from "../assets/components/Loading"
 import ProfileForm from "../assets/components/profileForm"
+import api from "../api/axios"
+import toast from "react-hot-toast"
 
 const Settings = () => {
   // Profile state holds the current form values for the settings page.
@@ -10,24 +11,33 @@ const Settings = () => {
   const [loading, setLoading] = useState(true)
   // Controls whether the password modal is visible.
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
   // Local form state for password inputs.
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" })
   // Status messages shown after save or password update.
   const [statusMessage, setStatusMessage] = useState("")
 
   useEffect(() => {
-    // Simulate fetching profile data and populate the form values.
-    const timer = setTimeout(() => {
-      setProfile({
-        fullName: `${dummyProfileData.firstName || ""} ${dummyProfileData.lastName || ""}`.trim(),
-        email: dummyProfileData.email || "",
-        position: dummyProfileData.position || "",
-        bio: dummyProfileData.bio || "",
-      })
-      setLoading(false)
-    }, 1000)
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get("/profile")
+        const profileData = res.data
+        if (profileData) {
+          setProfile({
+            fullName: `${profileData.firstName || ""} ${profileData.lastName || ""}`.trim(),
+            email: profileData.email || "",
+            position: profileData.position || "",
+            bio: profileData.bio || "",
+          })
+        }
+      } catch (error) {
+        toast.error(error?.response?.data?.error || error?.message || "Failed to load profile")
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    return () => clearTimeout(timer)
+    fetchProfile()
   }, [])
 
   if (loading) return <Loading />
@@ -38,10 +48,23 @@ const Settings = () => {
     setProfile((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Show a success message when the user saves the profile.
-    setStatusMessage("Profile saved successfully.")
+    try {
+      const res = await api.post("/profile", profile)
+      const savedProfile = res.data?.profile
+      if (savedProfile) {
+        setProfile({
+          fullName: `${savedProfile.firstName || ""} ${savedProfile.lastName || ""}`.trim(),
+          email: savedProfile.email || "",
+          position: savedProfile.position || "",
+          bio: savedProfile.bio || "",
+        })
+      }
+      setStatusMessage("Profile saved successfully.")
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || "Failed to save profile")
+    }
   }
 
   // Update password form state as the user types.
@@ -50,12 +73,35 @@ const Settings = () => {
     setPasswordForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault()
-    // Close the modal and reset password inputs after submit.
-    setShowPasswordModal(false)
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" })
-    setStatusMessage("Password updated successfully.")
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast.error("Please fill in all password fields")
+      return
+    }
+    if (passwordForm.newPassword.length < 3) {
+      toast.error("New password must be at least 3 characters")
+      return
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("New passwords do not match")
+      return
+    }
+
+    setPasswordLoading(true)
+    try {
+      await api.post("/auth/change-password", {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      })
+      setShowPasswordModal(false)
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      setStatusMessage("Password updated successfully.")
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || "Failed to update password")
+    } finally {
+      setPasswordLoading(false)
+    }
   }
 
   return (
@@ -154,9 +200,10 @@ const Settings = () => {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition"
+                  disabled={passwordLoading}
+                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Update Password
+                  {passwordLoading ? "Updating..." : "Update Password"}
                 </button>
               </div>
             </form>

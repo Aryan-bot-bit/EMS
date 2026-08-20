@@ -10,6 +10,7 @@ const AttendanceHistory = ({
                 ? `${Math.floor(record.workingHours)}h ${Math.round((record.workingHours % 1) * 60)}m` 
                 : `${record.workingHours}h 0m`;
         }
+        if (record.checkIn && !record.checkOut) return "0h 0m (ongoing)";
         return "-";
     }
 }) => {
@@ -53,7 +54,7 @@ const AttendanceHistory = ({
                                     {getWorkingHoursDisplay(record)}
                                 </td>
                                 <td className='px-6 py-4'>
-                                    {dayType.label !== "-" ? <span className={`badge ${dayType.className}`}>{dayType.label}</span> : "-"}
+                                    {dayType.label !== "-" ? <span className={`badge ${dayType.className}`}>{dayType.label}</span> : record.checkIn && !record.checkOut ? <span className="badge bg-indigo-50 text-indigo-700">In Progress</span> : "-"}
                                 </td>
                                 <td className='px-6 py-4 text-slate-600'>
                                     {record.status || "-"}

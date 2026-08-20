@@ -1,6 +1,7 @@
 import React from 'react'
 
 const ProfileForm = ({ profile, onChange, onSubmit }) => {
+
   return (
     <form onSubmit={onSubmit} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="space-y-6">
@@ -10,7 +11,7 @@ const ProfileForm = ({ profile, onChange, onSubmit }) => {
             <input
               type="text"
               name="fullName"
-              value={profile.fullName}
+              value={profile?.fullName || ""}
               onChange={onChange}
               className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none"
             />
@@ -21,7 +22,7 @@ const ProfileForm = ({ profile, onChange, onSubmit }) => {
             <input
               type="email"
               name="email"
-              value={profile.email}
+              value={profile?.email || ""}
               onChange={onChange}
               className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none"
             />
@@ -34,7 +35,7 @@ const ProfileForm = ({ profile, onChange, onSubmit }) => {
             <input
               type="text"
               name="position"
-              value={profile.position}
+              value={profile?.position || ""}
               onChange={onChange}
               className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none"
             />
@@ -44,7 +45,7 @@ const ProfileForm = ({ profile, onChange, onSubmit }) => {
             <span className="text-sm font-medium text-slate-700">Bio</span>
             <textarea
               name="bio"
-              value={profile.bio}
+              value={profile?.bio || ""}
               onChange={onChange}
               rows={4}
               className="mt-2 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-slate-400 focus:bg-white focus:outline-none"

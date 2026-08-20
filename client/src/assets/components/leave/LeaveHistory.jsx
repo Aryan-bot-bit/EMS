@@ -1,6 +1,8 @@
 import React, {useState} from 'react'
 import { Check, Loader2, X } from 'lucide-react'
 import {format} from 'date-fns'
+import toast from 'react-hot-toast'
+import api from '../../../api/axios'
 
 
 const LeaveHistory = ({leaves, isAdmin, onUpdate}) => {
@@ -8,6 +10,15 @@ const LeaveHistory = ({leaves, isAdmin, onUpdate}) => {
 
     const handleStatusUpdate = async (id, status) => {
         setProcessing(id)
+
+       try {
+  await api.patch(`/leave/${id}`, {status})
+  onUpdate();
+} catch (error) {
+  toast.error(error?.response?.data?.error || error?.message)
+} finally {
+  setProcessing(null)
+}
     }
   return (
     <div className='card overflow-hidden'>
@@ -68,15 +79,17 @@ const LeaveHistory = ({leaves, isAdmin, onUpdate}) => {
   <td>
     {leave.status === "PENDING" && (
       <div className='flex justify-center gap-2'>
-        <button disabled={!!processing}
+        <button type='button' disabled={!!processing}
+        aria-label='Approve leave' title='Approve leave'
         onClick={()=> handleStatusUpdate(leave._id || leave.id, "APPROVED")} className='p-1.5 rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors'>
           {processing === (leave._id || leave.id) ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check />}
         </button>
 
-         <button 
+         <button type='button'
           onClick={()=> handleStatusUpdate(leave._id || leave.id, "REJECTED")}
           disabled={!!processing}
-         className='p-1.5 rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors'>
+          aria-label='Reject leave' title='Reject leave'
+         className='p-1.5 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors'>
           {processing === (leave._id || leave.id) ? <Loader2 className="w-4 h-4 animate-spin"/> : <X className="w-4 h-4"/>}
         </button>
 

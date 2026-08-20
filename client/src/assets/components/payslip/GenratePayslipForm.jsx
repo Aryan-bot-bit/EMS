@@ -1,8 +1,12 @@
 import { Plus, X } from 'lucide-react'
 import React, { useState } from 'react'
+import toast from 'react-hot-toast'
+import api from '../../../api/axios'
+
 
 const GenratePayslipForm = ({ employees = [], onSuccess }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   if (!isOpen) return (
     <button
@@ -15,10 +19,20 @@ const GenratePayslipForm = ({ employees = [], onSuccess }) => {
   )
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+  e.preventDefault();
+  setLoading(true)
+  const formData = new FormData(e.currentTarget);
+  const data = Object.fromEntries(formData.entries())
+  try {
+    await api.post('/payslips', data)
     setIsOpen(false)
-    if (typeof onSuccess === 'function') onSuccess()
+    onSuccess?.()
+  } catch (err) {
+    toast.error(err.response?.data?.error || err?.message || 'Failed to create payslip')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className='fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4'>
@@ -122,9 +136,10 @@ const GenratePayslipForm = ({ employees = [], onSuccess }) => {
             </button>
             <button
               type='submit'
-              className='rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition'
+              disabled={loading}
+              className='rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition disabled:cursor-not-allowed disabled:opacity-60'
             >
-              Create Payslip
+              {loading ? 'Creating...' : 'Create Payslip'}
             </button>
           </div>
         </form>

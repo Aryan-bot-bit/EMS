@@ -1,10 +1,12 @@
 
 
 import { useCallback, useEffect, useState } from 'react'
-import { dummyAttendanceData } from '../assets/assets'
 import CheckInButton from '../assets/components/attendance/checkinbutton'
 import AttendanceStats from '../assets/components/attendance/attendancestats'
 import AttendanceHistory from '../assets/components/attendance/attendanceHistory'
+import api from "../api/axios"
+import toast, {} from "react-hot-toast"
+
 
 // Simple fallback Loading component to prevent crashes
 const Loading = () => (
@@ -18,11 +20,23 @@ const Attendance = () => {
   const [loading, setLoading] = useState(true)
   const [isDeleted, setIsDeleted] = useState(false)
 
-  const fetchData = useCallback(async () => {
-    setHistory(dummyAttendanceData)
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000)
+  const fetchData = useCallback(async (updatedRecord) => {
+   try {
+  const res = await api.get("/attendance");
+  const json = res.data;
+  const nextHistory = json.data || []
+  if (updatedRecord?._id) {
+    const recordIndex = nextHistory.findIndex((record) => record._id === updatedRecord._id)
+    if (recordIndex >= 0) nextHistory[recordIndex] = updatedRecord
+    else nextHistory.unshift(updatedRecord)
+  }
+  setHistory(nextHistory)
+  if(json.employee?.isDeleted) setIsDeleted(true)
+} catch (error) {
+  toast.error(error?.response?.data?.error || error?.message || "Failed to load attendance")
+} finally{
+  setLoading(false)
+}
   }, [] )
 
   useEffect(() => {

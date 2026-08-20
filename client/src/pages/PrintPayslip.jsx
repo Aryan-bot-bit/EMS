@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { dummyPayslipData } from '../assets/assets';
 import Loading from '../assets/components/Loading';
 import { format } from 'date-fns'
+import api from '../api/axios';
+import toast from 'react-hot-toast';
 
 const PrintPayslip = () => {
   const { id } = useParams();
   const [payslip, setPayslip] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(()=>{
-    setPayslip(dummyPayslipData.find((slip)=>slip._id === id))
-    setTimeout(()=>{
-      setLoading(false)
-    }, 1000)
+  useEffect(() => {
+  api.get(`/payslips/${id}`)
+    .then((res) => setPayslip(res.data))
+    .catch((error) => {
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to load payslip')
+    })
+    .finally(() => setLoading(false))
   },[id])
 
   if(loading) return <Loading />
@@ -48,6 +51,10 @@ const PrintPayslip = () => {
           <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Period</p>
           <p className="font-semibold text-slate-900">{format(new Date(payslip.year, payslip.month - 1), "MMMM yyyy")}</p>
         </div>
+        <div>
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Status</p>
+          <p className="font-semibold text-slate-900">{payslip.status || 'ISSUED'}</p>
+        </div>
       </div>
 
       <div className='rounded-xl border border-slate-200 overflow-hidden mb-8'>
@@ -72,11 +79,6 @@ const PrintPayslip = () => {
 <tr className="border-t border-slate-100">
   <td className='py-3 px-4 text-slate-700'>Deductions</td>
   <td className='text-right py-3 px-4 text-slate-900 font-medium'>${payslip.deductions?.toLocaleString()}</td>
-</tr>
-
-<tr className="border-t border-slate-100">
-  <td className='py-3 px-4 text-slate-700'>Basic Salary</td>
-  <td className='text-right py-3 px-4 text-slate-900 font-medium'>${payslip.basicSalary?.toLocaleString()}</td>
 </tr>
 
     <tr className="border-t-2 border-slate-200 bg-slate-50">

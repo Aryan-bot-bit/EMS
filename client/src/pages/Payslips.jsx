@@ -1,25 +1,49 @@
-import { useEffect, useState } from "react";
-import { dummyPayslipData, dummyEmployeeData } from "../assets/assets";
+import { useCallback, useEffect, useState } from "react";
 import Loading from "../assets/components/Loading";
 import PayslipList from "../assets/components/payslip/PayslipList";
 import GenratePayslipForm from "../assets/components/payslip/GenratePayslipForm";
+import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
+import toast from "react-hot-toast";
 
 const Payslips = () => {
   const [payslips, setPayslips] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const isAdmin = true;
+
+
+  const {user} = useAuth()
+  const isAdmin = user?.role === "ADMIN";
+
+  const fetchPayslips = useCallback(async ()=>{
+  try {
+    const res = await api.get('/payslips')
+    setPayslips(res.data.data || res.data.date || [])
+  } catch (error) {
+    toast.error(error?.response?.data?.error || error?.message);
+  }finally{
+    setLoading(false)
+  }
+},[])
+
+
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setPayslips(dummyPayslipData);
-      if (isAdmin) {
-        setEmployees(dummyEmployeeData);
-      }
-      setLoading(false);
-    }, 1000);
+    fetchPayslips()
+  }, [fetchPayslips])
 
-    return () => clearTimeout(timer);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    api.get("/employees")
+      .then((res) => {
+        const employeeData = res.data?.data || res.data || [];
+        setEmployees(employeeData.filter((employee) => !employee.isDeleted));
+      })
+      .catch((error) => {
+        toast.error(error?.response?.data?.error || error?.message || "Failed to load employees");
+      });
   }, [isAdmin]);
 
   if (loading) return <Loading />
@@ -36,7 +60,7 @@ const Payslips = () => {
       </p>
     </div>
 
-    {isAdmin && <GenratePayslipForm employees={employees} />}
+    {isAdmin && <GenratePayslipForm employees={employees} onSuccess={fetchPayslips} />}
   </div>
 
   <PayslipList payslips={payslips} isAdmin={isAdmin}/>
